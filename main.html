@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Task Organizer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Student Task Organizer</h1>
+    <div class="muted">Leader: <b>admin</b> / <b>1234</b></div>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+  </header>
+
+  <div class="wrap">
+    
+    <!-- Landing -->
+    <section id="page-landing" class="card">
+      <h2>Welcome</h2>
+      <p class="muted">Choose a role to continue.</p>
+      <div class="center">
+        <button onclick="nav('page-leader-login')">Leader Login</button>
+        <button class="secondary" onclick="nav('page-member-login')">Member Login</button>
+        <button class="ghost" onclick="nav('page-member-register')">Member Register</button>
+      </div>
+    </section>
+
+    <!-- Leader Login -->
+    <section id="page-leader-login" class="card hidden">
+      <h2>Leader Login</h2>
+      <div class="row">
+        <div class="col"><input id="l-user" placeholder="Username" /></div>
+        <div class="col"><input id="l-pass" type="password" placeholder="Password" /></div>
+      </div>
+      <div class="toolbar">
+        <button onclick="leaderLogin()">Login</button>
+        <button class="ghost" onclick="nav('page-landing')">Back</button>
+      </div>
+    </section>
+
+    <!-- Member Register -->
+    <section id="page-member-register" class="card hidden">
+      <h2>Member Registration</h2>
+      <div class="row">
+        <div class="col"><input id="m-name" placeholder="Full name"/></div>
+        <div class="col"><input id="m-email" type="email" placeholder="Email"/></div>
+      </div>
+      <div class="row">
+        <div class="col"><input id="m-pass" type="password" placeholder="Password"/></div>
+        <div class="col"><input id="m-skills" placeholder="Skills (comma separated)"/></div>
+      </div>
+      <div class="toolbar">
+        <button onclick="registerMember()">Register</button>
+        <button class="ghost" onclick="nav('page-landing')">Back</button>
+      </div>
+    </section>
+
+    <!-- Member Login -->
+    <section id="page-member-login" class="card hidden">
+      <h2>Member Login</h2>
+      <div class="row">
+        <div class="col"><input id="lm-email" type="email" placeholder="Email"/></div>
+        <div class="col"><input id="lm-pass" type="password" placeholder="Password"/></div>
+      </div>
+      <div class="toolbar">
+        <button onclick="memberLogin()">Login</button>
+        <button class="ghost" onclick="nav('page-landing')">Back</button>
+      </div>
+    </section>
+
+    <!-- Leader Dashboard -->
+    <section id="page-leader" class="hidden">
+      <div class="row">
+        <div class="col card">
+          <h2>Assign Task</h2>
+          <div class="row">
+            <div class="col"><input id="t-title" placeholder="Task title"/></div>
+          </div>
+          <div class="row">
+            <div class="col"><input id="t-skill" placeholder="Required skill"/></div>
+            <div class="col">
+              <select id="t-member"><option value="">Select member</option></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col"><label>Start Date</label><input id="t-start" type="date"/></div>
+            <div class="col"><label>Deadline</label><input id="t-deadline" type="date"/></div>
+          </div>
+          <div class="row">
+            <div class="col"><label>Points</label><input id="t-points" type="number" min="0"/></div>
+            <div class="col"><label>Penalty</label><input id="t-penalty" type="number" min="0"/></div>
+          </div>
+          <div class="toolbar">
+            <button onclick="assignTask()">Assign</button>
+            <button class="ghost" onclick="logout()">Logout</button>
+          </div>
+          <p class="muted" id="skill-hint"></p>
+        </div>
+        <div class="col card">
+          <h2>Members (with Points & Penalties)</h2>
+          <div id="member-list" class="list"></div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2>All Tasks</h2>
+        <table class="table" id="task-table">
+          <thead>
+            <tr>
+              <th>Title</th><th>Required Skill</th><th>Assigned To</th><th>Status</th><th>Points</th><th>Penalty</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="task-rows"></tbody>
+        </table>
+      </div>
+
+      <!-- Analytics -->
+      <div class="card">
+        <h2>📊 Analytics Dashboard</h2>
+        <div class="row">
+          <div class="col"><canvas id="statusChart"></canvas></div>
+          <div class="col"><canvas id="memberChart"></canvas></div>
+        </div>
+        <div class="row">
+          <div class="col"><canvas id="timelineChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Member Dashboard -->
+    <section id="page-member" class="card hidden">
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <h2 id="mem-welcome">Member Dashboard</h2>
+        <button class="ghost" onclick="logout()">Logout</button>
+      </div>
+      <p class="muted" id="mem-skills"></p>
+      <div class="kanban">
+        <div class="kanban-col" data-status="todo" ondragover="onDragOver(event)" ondrop="onDrop(event,'todo')">
+          <div class="kanban-head"><h3>To Do</h3><span class="count" id="count-todo">0</span></div>
+          <div id="col-todo"></div>
+        </div>
+        <div class="kanban-col" data-status="inprogress" ondragover="onDragOver(event)" ondrop="onDrop(event,'inprogress')">
+          <div class="kanban-head"><h3>In Progress</h3><span class="count" id="count-inprogress">0</span></div>
+          <div id="col-inprogress"></div>
+        </div>
+        <div class="kanban-col" data-status="done" ondragover="onDragOver(event)" ondrop="onDrop(event,'done')">
+          <div class="kanban-head"><h3>Done</h3><span class="count" id="count-done">0</span></div>
+          <div id="col-done"></div>
+        </div>
+      </div>
+
+      <!-- 📤 Member File Upload -->
+      <div class="card">
+        <h3>📤 Upload Completed Task</h3>
+        <div class="row">
+          <div class="col">
+            <select id="upload-task">
+              <option value="">Select Done Task</option>
+            </select>
+          </div>
+          <div class="col">
+            <input type="file" id="upload-file" />
+          </div>
+        </div>
+        <div class="toolbar">
+          <button onclick="uploadTaskFile()">Upload File</button>
+        </div>
+      </div>
+
+      <!-- Member’s Created Tasks -->
+      <div class="card">
+        <h3>Tasks I Created</h3>
+        <div id="created-tasks"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
